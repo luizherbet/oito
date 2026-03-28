@@ -35,3 +35,8 @@ class User(Base):
         foreign_keys="Appointment.professional_id",
         back_populates="professional",
     )
+    service_as_professional = relationship(
+        "Service",
+        foreign_keys="Service.professional_id",
+        back_populates="service",
+    )
