@@ -17,11 +17,14 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     zipcode = Column(String, nullable=False)
     address = Column(String, nullable=False)
+    city= Column(String, nullable=False)
     phone = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_professional = Column(Boolean, nullable=False, default=False)
+    role = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    is_active = Column(Boolean, nullable=False, default=True)
 
     schedules = relationship("Schedule", back_populates="professional")
 
@@ -35,8 +38,8 @@ class User(Base):
         foreign_keys="Appointment.professional_id",
         back_populates="professional",
     )
-    service_as_professional = relationship(
+    services = relationship(
         "Service",
         foreign_keys="Service.professional_id",
-        back_populates="service",
+        back_populates="professional",
     )

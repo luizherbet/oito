@@ -23,8 +23,9 @@ class Service(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 
     appointments = relationship("Appointment", back_populates="service")
+
     professional = relationship(
         "User",
         foreign_keys=[professional_id],
-        back_populates="professional",
+        back_populates="services",
     )

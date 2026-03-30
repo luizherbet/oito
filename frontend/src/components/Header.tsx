@@ -4,7 +4,7 @@ type NavItem = {
 }
 
 const navItems: NavItem[] = [
-    {label: 'Cadastre-se', href: '/#singup'},
+    {label: 'Cadastre-se', href: '/singup'},
     {label: 'Entrar', href: '/#login'},
 ]
 
