@@ -26,11 +26,22 @@ const initial: FormState = {
     role: '',
 }
 
-export default function SingUp() {
+export default function Register() {
     const [form, setForm] = useState<FormState>(initial)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+
+    function formatCEP(value: string) {
+        value = value.replace(/\D/g, '')
+        value = value.slice(0, 8)
+
+        if (value.length > 5) {
+            value = value.replace(/^(\d{5})(\d{1,3})$/, '$1-$2')
+        }
+
+        return value
+    }
 
     function update<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((f) => ({...f, [key]: value}))
@@ -110,7 +121,7 @@ export default function SingUp() {
         <div className="container mx-auto max-w-md px-4 py-8">
             <h1 className="mb-6 text-2xl font-semibold text-slate-900">Cadastre-se</h1>
 
-            <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <form onSubmit={onSubmit} className="flex justify-around flex-wrap flex-col gap-4">
                 {error && (
                     <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
                         {error}
@@ -142,9 +153,10 @@ export default function SingUp() {
                     CEP
                     <input
                         required
-                        className="rounded border border-slate-300 px-3 py-2"
+                        placeholder="99999-999"
+                        className="flex rounded border border-slate-300 px-3 py-2 max-w-[150px]"
                         value={form.zipcode}
-                        onChange={(e) => update('zipcode', e.target.value)}
+                        onChange={(e) => update('zipcode', formatCEP(e.target.value))}
                     />
                 </label>
 
@@ -152,7 +164,7 @@ export default function SingUp() {
                     Cidade
                     <input
                         required
-                        className="rounded border border-slate-300 px-3 py-2"
+                        className="flex rounded border border-slate-300 px-3 py-2 max-w-[200px]"
                         value={form.city}
                         onChange={(e) => update('city', e.target.value)}
                     />

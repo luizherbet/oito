@@ -4,7 +4,9 @@ import './App.css'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout.tsx'
 import Home from './pages/Home.tsx'
-import SingUp from './pages/SingUp.tsx'
+import Register from './pages/Register.tsx'
+import Login from './pages/Login.tsx'
+
 
 
 function App() {
@@ -22,7 +24,8 @@ function App() {
         <Layout>
             <Routes>
                 <Route path="/" element={<Home/>}/>
-                <Route path="/singup" element={<SingUp/>}/>
+                <Route path="/register" element={<Register/>}/>
+                <Route path="/login" element={<Login/>}/>
             </Routes>
         </Layout>
     )
