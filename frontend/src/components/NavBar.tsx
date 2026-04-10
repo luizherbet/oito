@@ -29,8 +29,29 @@ export default function NavBar() {
             padding: 0,
             alignItems: 'center',
             background: 'white',
+            flexWrap: 'wrap',
           }}
         >
+          {user.is_professional && (
+            <>
+              <li>
+                <Link
+                  to="/professional/schedule"
+                  className="text-sm text-slate-700 hover:text-slate-900"
+                >
+                  Agenda
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/professional/service"
+                  className="text-sm text-slate-700 hover:text-slate-900"
+                >
+                  Serviços
+                </Link>
+              </li>
+            </>
+          )}
           <li className="text-sm text-slate-700">{user.name}</li>
           <li>
             <button

@@ -18,6 +18,7 @@ class UserRead(BaseModel):
     email: EmailStr
     zipcode: str
     address: str
+    city: str
     phone: str
     is_professional: bool
     role: str

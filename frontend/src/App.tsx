@@ -6,6 +6,9 @@ import Layout from './components/Layout.tsx'
 import Home from './pages/Home.tsx'
 import Register from './pages/Register.tsx'
 import Login from './pages/Login.tsx'
+import Appointment from './pages/Appointment.tsx'
+import Services from "./pages/professional/Services.tsx";
+import Schedule from "./pages/professional/Schedule.tsx";
 
 
 
@@ -26,6 +29,10 @@ function App() {
                 <Route path="/" element={<Home/>}/>
                 <Route path="/register" element={<Register/>}/>
                 <Route path="/login" element={<Login/>}/>
+                <Route path="/appointment" element={<Appointment />} />
+                <Route path="/professional/service" element={<Services />} />
+                <Route path="/professional/schedule" element={<Schedule />} />
+
             </Routes>
         </Layout>
     )

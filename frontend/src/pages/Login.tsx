@@ -16,7 +16,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email.trim(), password)
-      navigate('/')
+      navigate('/appointment')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível entrar.')
     } finally {

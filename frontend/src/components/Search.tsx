@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react'
-import {fetchSearch} from '../api/search'
+import {fetchSearch} from '../api/search.ts'
 import type {SearchResponse} from '../types/search'
 
 export default function SearchBar() {

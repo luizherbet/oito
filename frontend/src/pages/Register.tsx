@@ -149,26 +149,27 @@ export default function Register() {
                     />
                 </label>
 
-                <label className="flex flex-col gap-1 text-sm">
-                    CEP
-                    <input
-                        required
-                        placeholder="99999-999"
-                        className="flex rounded border border-slate-300 px-3 py-2 max-w-[150px]"
-                        value={form.zipcode}
-                        onChange={(e) => update('zipcode', formatCEP(e.target.value))}
-                    />
-                </label>
+                <div className="flex flex-row justify-between text-sm ">
+                    <label className="flex flex-col gap-1 text-sm">
+                        CEP
+                        <input
+                            required
+                            placeholder="99999-999"
+                            className="flex rounded border border-slate-300 px-3 py-2 max-w-[150px]"
+                            value={form.zipcode}
+                            onChange={(e) => update('zipcode', formatCEP(e.target.value))}
+                        />
+                    </label>
 
-                <label className="flex flex-col gap-1 text-sm">
-                    Cidade
-                    <input
-                        required
-                        className="flex rounded border border-slate-300 px-3 py-2 max-w-[200px]"
-                        value={form.city}
-                        onChange={(e) => update('city', e.target.value)}
-                    />
-                </label>
+                    <label className="flex flex-col gap-1 text-sm">
+                        Cidade
+                        <input
+                            required
+                            className="flex rounded border border-slate-300 px-3 py-2 max-w-[200px]"
+                            value={form.city}
+                            onChange={(e) => update('city', e.target.value)}
+                        />
+                    </label></div>
 
                 <label className="flex flex-col gap-1 text-sm">
                     Endereço
