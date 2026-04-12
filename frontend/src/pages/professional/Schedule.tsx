@@ -158,40 +158,37 @@ export default function Schedule() {
     }
 
     const blocos = selecionadasParaBlocos(selecionadas)
-    if (blocos.length === 0) {
-      setMensagem('Seleciona pelo menos um horário.')
-      return
-    }
 
     setSalvando(true)
     setMensagem(null)
 
     try {
-      for (const b of blocos) {
-        const res = await fetch('/api/v1/schedules/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            professional_id: professionalId,
+      const res = await fetch('/api/v1/schedules/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          intervals: blocos.map((b) => ({
             day_of_week: b.day_of_week,
             start_time: b.start_time,
             end_time: b.end_time,
-            is_active: true,
-          }),
-        })
-        const data = (await res.json().catch(() => ({}))) as { detail?: unknown }
-        if (!res.ok) {
-          const msg =
-            typeof data.detail === 'string'
-              ? data.detail
-              : `Erro ao guardar (${res.status})`
-          throw new Error(msg)
-        }
+          })),
+        }),
+      })
+      const data = (await res.json().catch(() => ({}))) as ScheduleRead[] | { detail?: unknown }
+      if (!res.ok) {
+        const msg =
+          typeof data === 'object' &&
+          data !== null &&
+          'detail' in data &&
+          typeof (data as { detail?: unknown }).detail === 'string'
+            ? (data as { detail: string }).detail
+            : `Erro ao guardar (${res.status})`
+        throw new Error(msg)
       }
-      setMensagem('Horário guardado.')
+      setMensagem(blocos.length === 0 ? 'Agenda limpa.' : 'Horário guardado.')
       await carregarAgenda()
     } catch (e) {
       setMensagem(e instanceof Error ? e.message : 'Erro ao guardar.')
@@ -201,13 +198,20 @@ export default function Schedule() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-7xl space-y-6 px-1">
+      <header className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Disponibilidade semanal</h1>
+        <p className="text-sm text-slate-500">
+          Toca nas células para marcar ou desmarcar. Guardar sincroniza com o servidor.
+        </p>
+      </header>
+
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => void guardarAgenda()}
           disabled={salvando || carregando || professionalId == null}
-          className="rounded bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm shadow-violet-500/20 transition hover:bg-violet-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-45"
         >
           {salvando ? 'A guardar…' : 'Guardar'}
         </button>
@@ -215,55 +219,94 @@ export default function Schedule() {
           type="button"
           onClick={() => void carregarAgenda()}
           disabled={carregando || professionalId == null}
-          className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-45"
         >
           {carregando ? 'A carregar…' : 'Recarregar'}
         </button>
-        {mensagem && <p className="text-sm text-slate-600">{mensagem}</p>}
+        {mensagem && (
+          <p role="status" className="text-sm font-medium text-slate-600">
+            {mensagem}
+          </p>
+        )}
       </div>
 
-      <div className="overflow-x-auto rounded border border-slate-200 bg-white p-2">
-        <table className="w-full min-w-[560px] border-collapse text-center text-sm">
-          <thead>
-            <tr>
-              <th className="border-b border-slate-200 bg-slate-50 p-2 text-left">Hora</th>
-              {DIAS.map((d) => (
-                <th key={d.dow} className="border-b border-slate-200 bg-slate-50 p-2">
-                  {d.label}
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/50 ring-1 ring-slate-100">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-separate border-spacing-0 text-center text-sm">
+            <thead>
+              <tr className="bg-gradient-to-b from-slate-50 to-slate-100/90">
+                <th
+                  scope="col"
+                  className="sticky left-0 z-20 border-b border-slate-200/90 py-3.5 pl-5 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+                >
+                  Hora
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {HORAS.map((h) => (
-              <tr key={h}>
-                <td className="border-b border-slate-100 bg-slate-50 p-2 text-left text-slate-600">
-                  {String(h).padStart(2, '0')}:00
-                </td>
-                {DIAS.map((d) => {
-                  const id = celulaId(d.dow, h)
-                  const ativo = selecionadas.has(id)
-                  return (
-                    <td key={id} className="border-b border-slate-100 p-0">
-                      <button
-                        type="button"
-                        aria-pressed={ativo}
-                        onClick={() => alternar(id)}
-                        className={`h-10 w-full text-xs ${
-                          ativo
-                            ? 'bg-violet-600 text-white'
-                            : 'bg-white text-slate-300 hover:bg-violet-50'
-                        }`}
-                      >
-                        {ativo ? '✓' : '·'}
-                      </button>
-                    </td>
-                  )
-                })}
+                {DIAS.map((d) => (
+                  <th
+                    key={d.dow}
+                    scope="col"
+                    className={`border-b border-slate-200/90 px-2 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-600 ${
+                      d.dow === 0 || d.dow === 6 ? 'bg-violet-50/50 text-violet-800' : ''
+                    }`}
+                  >
+                    {d.label}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="text-slate-700">
+              {HORAS.map((h) => (
+                <tr
+                  key={h}
+                  className="transition-colors odd:bg-white even:bg-slate-50/40 hover:bg-violet-50/30"
+                >
+                  <th
+                    scope="row"
+                    className="sticky left-0 z-10 whitespace-nowrap border-b border-slate-100 bg-inherit py-1 pl-5 pr-4 text-left text-xs font-medium tabular-nums text-slate-500"
+                  >
+                    <span className="inline-flex min-w-[3rem] items-center rounded-md px-2 py-1.5 text-xs font-medium text-slate-600 tabular-nums">
+                      {String(h).padStart(2, '0')}:00
+                    </span>
+                  </th>
+                  {DIAS.map((d) => {
+                    const id = celulaId(d.dow, h)
+                    const ativo = selecionadas.has(id)
+                    const fimDeSemana = d.dow === 0 || d.dow === 6
+                    return (
+                      <td
+                        key={id}
+                        className={`border-b border-slate-100 p-0.5 ${fimDeSemana ? 'bg-violet-50/20' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          aria-pressed={ativo}
+                          aria-label={
+                            ativo
+                              ? `Desmarcar ${d.label} às ${String(h).padStart(2, '0')}:00`
+                              : `Marcar ${d.label} às ${String(h).padStart(2, '0')}:00`
+                          }
+                          onClick={() => alternar(id)}
+                          className={`flex h-9 w-full min-w-[2rem] items-center justify-center rounded-md text-xs font-semibold leading-none transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-1 ${
+                            ativo
+                              ? 'origin-center scale-[0.88] bg-gradient-to-b from-violet-500 to-violet-600 text-white shadow-inner shadow-violet-900/20'
+                              : 'border border-transparent bg-white text-slate-300 hover:border-violet-200 hover:bg-violet-50/80 hover:text-violet-400'
+                          }`}
+                        >
+                          <span
+                            className={`transition-transform duration-150 ${ativo ? 'opacity-100' : 'opacity-45'}`}
+                            aria-hidden
+                          >
+                            {ativo ? '✓' : '·'}
+                          </span>
+                        </button>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

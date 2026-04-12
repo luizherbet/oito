@@ -22,3 +22,12 @@ class ScheduleRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ScheduleInterval(BaseModel):
+    day_of_week: int
+    start_time: time
+    end_time: time
+
+
+class ScheduleReplace(BaseModel):
+    intervals: list[ScheduleInterval]

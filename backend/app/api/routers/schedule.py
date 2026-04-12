@@ -5,7 +5,7 @@ from datetime import time
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.models.schedule import Schedule
-from app.schemas.schedule import ScheduleCreate, ScheduleRead
+from app.schemas.schedule import ScheduleCreate, ScheduleRead, ScheduleReplace
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 
@@ -86,3 +86,62 @@ def create_schedule(payload: ScheduleCreate, current_user: User = Depends(get_cu
     db.refresh(schedule)
 
     return schedule
+
+@router.put("/me", response_model=list[ScheduleRead])
+def replace_my_schedules(
+    payload: ScheduleReplace,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ScheduleRead]:
+    if not current_user.is_professional:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not a professional user",
+        )
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user",
+        )
+
+    open_hour = time(7, 0)
+    close_hour = time(22, 0)
+
+    for it in payload.intervals:
+        if not (0 <= it.day_of_week <= 6):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="day_of_week must be between 0 and 6",
+            )
+        if not (it.start_time < it.end_time):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="start_time must be before end_time",
+            )
+        if not (it.start_time >= open_hour):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="start_time must be on or after 07:00",
+            )
+        if not (it.end_time <= close_hour):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="end_time must be on or before 22:00",
+            )
+
+    db.query(Schedule).filter(Schedule.professional_id == current_user.id).delete()
+    created: list[Schedule] = []
+    for it in payload.intervals:
+        s = Schedule(
+            professional_id=current_user.id,
+            day_of_week=it.day_of_week,
+            start_time=it.start_time,
+            end_time=it.end_time,
+            is_active=True,
+        )
+        db.add(s)
+        created.append(s)
+    db.commit()
+    for s in created:
+        db.refresh(s)
+    return created
