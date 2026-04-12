@@ -1,6 +1,6 @@
 import {FormEvent, useState} from 'react'
 import {getStoredToken} from "../api/auth.ts";
-import type {ServiceItem} from "../types/service.ts";
+import type {ServiceItem} from "../types/ServiceItem.ts";
 
 type Props = {
   onCreated?: (novo: ServiceItem) => void
@@ -10,12 +10,14 @@ type FormState = {
     title: string
     description: string
     price: string
+    is_active: boolean
 }
 
 const initial: FormState = {
     title: '',
     description: '',
     price: '',
+    is_active: true
 }
 
 
@@ -43,7 +45,7 @@ export default function Service({ onCreated }: Props) {
                 body: JSON.stringify({
                     title: form.title.trim(),
                     description: form.description.trim(),
-                    price: form.price.trim(),
+                    price: Number(form.price.trim()),
                 }),
             })
 
