@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
-
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Time
 from sqlalchemy.orm import relationship
+from app.enums import AppointmentStatus
 
 from app.database import Base
 
@@ -18,7 +19,13 @@ class Appointment(Base):
     client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     professional_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     service_id = Column(Integer, ForeignKey("services.id"), nullable=False)
-    status = Column(String, nullable=False)
+    appointment_date = Column(Date, nullable=False)
+    appointment_time = Column(Time, nullable=False)
+    status = Column(
+        SAEnum(AppointmentStatus, name="appointment_status_enum"),
+        nullable=False,
+        default=AppointmentStatus.pending,
+    )
     notes = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)

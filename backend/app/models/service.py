@@ -17,6 +17,7 @@ class Service(Base):
     professional_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    estimated_minutes = Column(Integer, nullable=False)
     price = Column(Numeric(10, 2), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
