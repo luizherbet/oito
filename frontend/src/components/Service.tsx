@@ -1,23 +1,30 @@
-import {FormEvent, useState} from 'react'
-import {getStoredToken} from "../api/auth.ts";
-import type {ServiceItem} from "../types/ServiceItem.ts";
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { getStoredToken } from '../api/auth.ts'
+import {
+  SERVICE_DURATION_CHOICES,
+  type ServiceDurationMinutes,
+} from '../constants/serviceDuration.ts'
+import type { ServiceItem } from '../types/ServiceItem.ts'
 
 type Props = {
   onCreated?: (novo: ServiceItem) => void
 }
 
 type FormState = {
-    title: string
-    description: string
-    price: string
-    is_active: boolean
+  title: string
+  description: string
+  price: string
+  estimated_minutes: ServiceDurationMinutes
+  is_active: boolean
 }
 
 const initial: FormState = {
-    title: '',
-    description: '',
-    price: '',
-    is_active: true
+  title: '',
+  description: '',
+  price: '',
+  estimated_minutes: 60,
+  is_active: true,
 }
 
 
@@ -25,7 +32,6 @@ export default function Service({ onCreated }: Props) {
     const [form, setForm] = useState<FormState>(initial)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [success, setSuccess] = useState(false)
 
     function update<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((f) => ({...f, [key]: value}))
@@ -46,6 +52,7 @@ export default function Service({ onCreated }: Props) {
                     title: form.title.trim(),
                     description: form.description.trim(),
                     price: Number(form.price.trim()),
+                    estimated_minutes: form.estimated_minutes,
                 }),
             })
 
@@ -60,7 +67,6 @@ export default function Service({ onCreated }: Props) {
                 return
             }
 
-            setSuccess(true)
             onCreated?.(data)
             setForm(initial)
         } catch {
@@ -103,6 +109,26 @@ export default function Service({ onCreated }: Props) {
                     value={form.price}
                     onChange={(e) => update('price', e.target.value)}
                 />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+                Duração estimada
+                <select
+                    required
+                    className="rounded border border-slate-300 px-3 py-2"
+                    value={form.estimated_minutes}
+                    onChange={(e) =>
+                        update(
+                            'estimated_minutes',
+                            Number(e.target.value) as ServiceDurationMinutes,
+                        )
+                    }
+                >
+                    {SERVICE_DURATION_CHOICES.map((c) => (
+                        <option key={c.minutes} value={c.minutes}>
+                            {c.label}
+                        </option>
+                    ))}
+                </select>
             </label>
             <button
                 type="submit"

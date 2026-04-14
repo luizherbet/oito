@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { getStoredToken } from '../../api/auth.ts'
 import Service from '../../components/Service.tsx'
+import {
+  SERVICE_DURATION_CHOICES,
+  formatServiceDuration,
+  isAllowedServiceDuration,
+  type ServiceDurationMinutes,
+} from '../../constants/serviceDuration.ts'
 import type { ServiceItem } from '../../types/ServiceItem.ts'
 
 const authHeaders = () => ({
@@ -41,6 +47,7 @@ export default function Services() {
       title: editando.title,
       description: editando.description ?? '',
       price: Number(editando.price),
+      estimated_minutes: editando.estimated_minutes,
     }
 
     const res = await fetch(`/api/v1/services/${editando.id}`, {
@@ -108,7 +115,14 @@ export default function Services() {
                 <button
                   type="button"
                   title="Editar"
-                  onClick={() => setEditando({ ...s })}
+                  onClick={() =>
+                    setEditando({
+                      ...s,
+                      estimated_minutes: isAllowedServiceDuration(s.estimated_minutes)
+                        ? s.estimated_minutes
+                        : 60,
+                    })
+                  }
                 >
                   ✏️
                 </button>
@@ -119,7 +133,8 @@ export default function Services() {
                   🗑
                 </button>
               </div>
-              <strong>{s.title}</strong> — R$ {Number(s.price).toFixed(2)}
+              <strong>{s.title}</strong> — R$ {Number(s.price).toFixed(2)} —{' '}
+              {formatServiceDuration(s.estimated_minutes)}
               <br />
               <span className="text-sm text-slate-600">{s.description}</span>
               <br />
@@ -168,6 +183,25 @@ export default function Services() {
                   setEditando({ ...editando, price: Number(e.target.value) })
                 }
               />
+            </label>
+            <label className="mt-2 block text-sm">
+              Duração estimada
+              <select
+                className="mt-1 w-full border p-2"
+                value={editando.estimated_minutes}
+                onChange={(e) =>
+                  setEditando({
+                    ...editando,
+                    estimated_minutes: Number(e.target.value) as ServiceDurationMinutes,
+                  })
+                }
+              >
+                {SERVICE_DURATION_CHOICES.map((c) => (
+                  <option key={c.minutes} value={c.minutes}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="mt-4 flex gap-2">
               <button type="submit" className="rounded bg-slate-900 px-4 py-2 text-white">

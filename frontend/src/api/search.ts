@@ -1,4 +1,4 @@
-import type { SearchResponse } from '../components/Search'
+import type { SearchResponse } from '../types/search.ts'
 
 export async function fetchSearch(q: string, limit = 20): Promise<SearchResponse> {
   const params = new URLSearchParams({ q, limit: String(limit) })

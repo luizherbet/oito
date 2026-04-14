@@ -111,7 +111,7 @@ export default function Register() {
         return (
             <div className="container mx-auto max-w-md px-4 py-8">
                 <p className="rounded-lg bg-green-50 p-4 text-green-800">
-                    Conta criada com sucesso. Já podes entrar.
+                    Conta criada com sucesso. Já pode entrar.
                 </p>
             </div>
         )

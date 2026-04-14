@@ -32,6 +32,14 @@ export default function NavBar() {
             flexWrap: 'wrap',
           }}
         >
+          <li>
+            <Link
+              to="/appointment"
+              className="text-sm text-slate-700 hover:text-slate-900"
+            >
+              Agendamentos
+            </Link>
+          </li>
           {user.is_professional && (
             <>
               <li>
@@ -39,7 +47,7 @@ export default function NavBar() {
                   to="/professional/schedule"
                   className="text-sm text-slate-700 hover:text-slate-900"
                 >
-                  Agenda
+                  Disponibilidade
                 </Link>
               </li>
               <li>

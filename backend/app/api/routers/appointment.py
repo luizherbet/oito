@@ -225,6 +225,20 @@ def confirm_appointment(appointment_id: int, current_user: User = Depends(get_cu
     loaded = _load_appointment_graph(db, appointment.id)
     return _to_read(loaded)
 
+@router.patch("/{appointment_id}/delete", response_model=AppointmentRead)
+def delete_appointment(appointment_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db))-> AppointmentRead:
+    if not current_user.is_active or not current_user.is_professional:
+        raise HTTPException(status_code=401, detail="Inactive user")
+    appointment = _load_appointment_graph(db, appointment_id)
+    if appointment.professional_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed to view this appointment")
+    if appointment.status != AppointmentStatus.pending:
+        raise HTTPException(status_code=409, detail="Only pending appointments can be confirmed")
+    appointment.status = AppointmentStatus.cancelled
+    db.commit()
+    loaded = _load_appointment_graph(db, appointment.id)
+    return _to_read(loaded)
+
 #deve ser profissional ok
 #id do prof do agendamento == current user
 #se o status atual for pendente
