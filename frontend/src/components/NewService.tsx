@@ -1,34 +1,34 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { getStoredToken } from '../api/auth.ts'
+import {useState} from 'react'
+import type {FormEvent} from 'react'
+import {getStoredToken} from '../api/auth.ts'
 import {
-  SERVICE_DURATION_CHOICES,
-  type ServiceDurationMinutes,
+    SERVICE_DURATION_CHOICES,
+    type ServiceDurationMinutes,
 } from '../constants/serviceDuration.ts'
-import type { ServiceItem } from '../types/ServiceItem.ts'
+import type {ServiceItem} from '../types/ServiceItem.ts'
 
 type Props = {
-  onCreated?: (novo: ServiceItem) => void
+    onCreated?: (novo: ServiceItem) => void
 }
 
 type FormState = {
-  title: string
-  description: string
-  price: string
-  estimated_minutes: ServiceDurationMinutes
-  is_active: boolean
+    title: string
+    description: string
+    price: string
+    estimated_minutes: ServiceDurationMinutes
+    is_active: boolean
 }
 
 const initial: FormState = {
-  title: '',
-  description: '',
-  price: '',
-  estimated_minutes: 60,
-  is_active: true,
+    title: '',
+    description: '',
+    price: '',
+    estimated_minutes: 60,
+    is_active: true,
 }
 
 
-export default function Service({ onCreated }: Props) {
+export default function Service({onCreated}: Props) {
     const [form, setForm] = useState<FormState>(initial)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -76,14 +76,16 @@ export default function Service({ onCreated }: Props) {
         }
     }
 
-    return (<div>Criar um Serviço
+    return (<div
+        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm w-[300px]">
+        <p className="border-b border-slate-100 mb-2 text-center"> Crie um serviço</p>
         <form onSubmit={onSubmit}>
             {error && (
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
                     {error}
                 </p>
             )}
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex p-1 flex-col gap-1 text-sm">
                 Título
                 <input
                     required
@@ -92,7 +94,7 @@ export default function Service({ onCreated }: Props) {
                     onChange={(e) => update('title', e.target.value)}
                 />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col p-1 gap-1 text-sm">
                 Descrição
                 <input
                     required
@@ -101,7 +103,7 @@ export default function Service({ onCreated }: Props) {
                     onChange={(e) => update('description', e.target.value)}
                 />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col p-1 gap-1 text-sm">
                 Preço
                 <input
                     required
@@ -110,7 +112,7 @@ export default function Service({ onCreated }: Props) {
                     onChange={(e) => update('price', e.target.value)}
                 />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col gap-1 p-2 text-sm">
                 Duração estimada
                 <select
                     required
