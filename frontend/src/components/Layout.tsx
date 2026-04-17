@@ -5,7 +5,7 @@ import Location from "./Location.tsx";
 
 export default function Layout({children}: { children: ReactNode }) {
     return (
-        <div style={{minHeight: '100vh', display: 'flex', flexDirection: 'column'}} className="bg-indigo-50 flex justify-center">
+        <div className="bg-indigo-50 flex flex-col justify-center">
             <Location/>
             <Header/>
             <main style={{flex: 1, padding: '16px'}}  className="flex justify-center">{children}</main>

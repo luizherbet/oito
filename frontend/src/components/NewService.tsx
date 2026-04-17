@@ -28,7 +28,7 @@ const initial: FormState = {
 }
 
 
-export default function Service({onCreated}: Props) {
+export default function NewService({onCreated}: Props) {
     const [form, setForm] = useState<FormState>(initial)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)

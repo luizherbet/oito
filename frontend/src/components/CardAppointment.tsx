@@ -1,3 +1,5 @@
+import type {CardAppointmentProps} from "../types/CardAppointmentProps.ts";
+
 export default function CardAppointment({
                                             service,
                                             nome,
@@ -8,34 +10,26 @@ export default function CardAppointment({
                                             onCancel,
                                             onReschedule,
                                             isProfessional
-                                        }) {
-    // function formatDateBr(iso: string): string {
-    //     const [y, m, d] = iso.split('-')
-    //     if (!y || !m || !d) return iso
-    //     return `${d}/${m}/${y}`
-    // }
-    // function formatTimeShort(iso: string): string {
-    //     return iso.length >= 5 ? iso.slice(0, 5) : iso
-    // }
-//     function timeToJson(t: string): string {
-//     const trimmed = t.trim()
-//     if (trimmed.length === 5) return `${trimmed}:00`
-//     return trimmed
-// }
+                                        }: CardAppointmentProps) {
+
+    function formatDateBr(iso: string): string {
+        const [y, m, d] = iso.split('-')
+        if (!y || !m || !d) return iso
+        return `${d}/${m}/${y}`
+    }
+    function formatTimeShort(iso: string): string {
+        return iso.length >= 5 ? iso.slice(0, 5) : iso
+    }
+
 
     return (
         <div
-            className="flex items-center justify-between rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3 shadow-sm">
-
+            className="flex items-center justify-between align-center rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3 shadow-sm">
             <div className="flex flex-col">
                 <strong className="text-slate-800">{nome}</strong>
                 <span className="text-sm text-slate-700">{service}</span>
-                <span className="text-xs text-slate-500">
-          {data} - {time}
-        </span>
-                <span className="text-xs text-slate-500">
-          {status}
-        </span>
+                <span className="text-xs text-slate-500"> {formatTimeShort(time)} - {formatDateBr(data)} </span>
+                <span className="text-xs text-slate-500">{status}</span>
             </div>
 
             <div className="flex gap-2">
@@ -68,7 +62,8 @@ export default function CardAppointment({
                         </div>
                     )
                 ) : (
-                    <strong style={{ color: status === "Cancelado" ? "red" : "green" }} className="px-1 py-1 text-[10px]">{status}</strong>
+                    <strong style={{color: status === "Cancelado" ? "red" : "green"}}
+                            className="px-1 py-1 text-[10px]">{status}</strong>
                 )}
 
 

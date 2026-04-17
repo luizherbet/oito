@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel, EmailStr
 
 class UserCreate(BaseModel):
@@ -11,6 +13,12 @@ class UserCreate(BaseModel):
     is_professional: bool = False
     role: str
 
+class ServiceMini(BaseModel):
+    id: int
+    title: str
+    class Config:
+        from_attributes = True
+
 
 class UserRead(BaseModel):
     id: int
@@ -22,6 +30,7 @@ class UserRead(BaseModel):
     phone: str
     is_professional: bool
     role: str
+    services: List[ServiceMini]
 
     class Config:
         from_attributes = True

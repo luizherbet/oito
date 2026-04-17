@@ -1,3 +1,8 @@
+export type ServiceMini = {
+  id: number
+  title: string
+}
+
 export type UserRead = {
   id: number
   name: string
@@ -8,4 +13,5 @@ export type UserRead = {
   phone: string
   is_professional: boolean
   role: string
+  services?: ServiceMini[]
 }

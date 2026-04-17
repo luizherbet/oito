@@ -1,10 +1,16 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
+
 
 from app.api.deps import get_current_user, get_db
 from app.core.security import hash_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead
+
+from app.models.service import Service
 
 router = APIRouter(prefix="/users", tags=["users"])
 

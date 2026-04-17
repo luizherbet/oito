@@ -1,125 +1,108 @@
-import { useEffect, useState } from 'react'
-import { fetchSearch } from '../api/search.ts'
-import type { SearchResponse } from '../types/search.ts'
+import {useEffect, useState} from "react"
+import type {SearchResponse} from "../types/search"
+import {Link} from "react-router-dom";
 
-type Variant = 'default' | 'booking'
+export default function Search() {
+    const [q, setQ] = useState("")
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [results, setResults] = useState<SearchResponse[]>([])
 
-type Props = {
-  className?: string
-  inputClassName?: string
-  variant?: Variant
-  /** Quando `variant="booking"`, chamado ao clicar num profissional ou serviço. */
-  onBookingPick?: (hit: SearchResponse['results'][number]) => void
-}
-
-export default function SearchBar({
-  className = '',
-  inputClassName = "block w-[350px] p-4 ps-5 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-violet-900 focus:border-violet-900",
-  variant = 'default',
-  onBookingPick,
-}: Props) {
-  const [term, setTerm] = useState('')
-  const [results, setResults] = useState<SearchResponse['results']>([])
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const q = term.trim()
-
-    if (q.length < 3) {
-      setResults([])
-      setError(null)
-      return
-    }
-
-    const t = setTimeout(() => {
-      void (async () => {
-        try {
-          setError(null)
-          const data = await fetchSearch(q)
-          setResults(data.results)
-        } catch {
-          setError('Não foi possível buscar.')
-          setResults([])
+    useEffect(() => {
+        const term = q.trim()
+        if (term.length < 2) {
+            setResults([])
+            setError(null)
+            return
         }
-      })()
-    }, 400)
 
-    return () => clearTimeout(t)
-  }, [term])
+        const controller = new AbortController()
+        const t = window.setTimeout(async () => {
+            try {
+                setLoading(true)
+                setError(null)
 
-  const booking = variant === 'booking' && onBookingPick
+                const res = await fetch(`/api/v1/search?q=${encodeURIComponent(term)}`, {
+                    signal: controller.signal,
+                })
 
-  return (
-    <div className={className}>
-      <input
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        placeholder="Digite para buscar profissionais ou serviços..."
-        className={inputClassName}
-      />
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                const data = (await res.json()) as SearchResponse[]
+                setResults(data)
+            } catch (e: any) {
+                if (e?.name !== "AbortError") setError(e?.message ?? "Erro na busca")
+            } finally {
+                setLoading(false)
+            }
+        }, 300)
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-
-      {term.trim().length >= 3 && !error && results.length === 0 && (
-        <p className="mt-2 text-sm text-slate-500">
-          Nenhum resultado encontrado para a sua pesquisa.
-        </p>
-      )}
-
-      <ul
-        className={
-          variant === 'booking'
-            ? 'mt-3 max-h-64 space-y-2 overflow-y-auto pr-1'
-            : 'mt-2 space-y-1'
+        return () => {
+            controller.abort()
+            window.clearTimeout(t)
         }
-      >
-        {results.map((item) =>
-          item.type === 'professional' ? (
-            <li key={`p-${item.id}`}>
-              {booking ? (
-                <button
-                  type="button"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-violet-400 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300"
-                  onClick={() => onBookingPick(item)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-medium text-slate-900">{item.name}</div>
-                      <div className="text-xs text-slate-500">Profissional</div>
-                    </div>
-                    <span className="text-xs font-medium text-violet-700">Agendar</span>
-                  </div>
-                </button>
-              ) : (
-                <span className="text-sm">{item.name}</span>
-              )}
-            </li>
-          ) : (
-            <li key={`s-${item.id}`}>
-              {booking ? (
-                <button
-                  type="button"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-violet-400 hover:bg-violet-50 focus:outline-none focus:ring-2 focus:ring-violet-300"
-                  onClick={() => onBookingPick(item)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-medium text-slate-900">{item.title}</div>
-                      <div className="text-xs text-slate-600">{item.professional_name}</div>
-                      <div className="text-xs text-slate-500">Serviço</div>
-                    </div>
-                    <span className="text-xs font-medium text-violet-700">Agendar</span>
-                  </div>
-                </button>
-              ) : (
-                <span className="text-sm">
-                  {item.title} — {item.professional_name}
-                </span>
-              )}
-            </li>
-          ),
-        )}
-      </ul>
-    </div>
-  )
+    }, [q])
+
+    return (
+        <div className="w-full max-w-2xl">
+            <label className="block text-sm font-medium text-slate-700">Buscar</label>
+            <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Digite para buscar um serviço ou um profissional"
+                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-400"
+            />
+
+            <div className="mt-3">
+                {loading && <p className="text-sm text-slate-500">Buscando...</p>}
+                {error && <p className="text-sm text-red-600">{error}</p>}
+
+                {!loading && !error && results.length === 0 && q.trim().length >= 2 && (
+                    <p className="text-sm text-slate-500">Nenhum resultado.</p>
+                )}
+
+                <ul className="mt-3 space-y-3">
+                    {results.map((prof) => {
+                        const maxServices = 3
+                        const serviceTitles = prof.services.map((s) => s.title)
+                        const shown = serviceTitles.slice(0, maxServices)
+                        const hasMore = serviceTitles.length > maxServices
+
+                        // Perfil ainda não existe (placeholder)
+                        const href = "#"
+
+                        return (
+                            <li key={prof.id}>
+                                <Link
+                                    to={`/profile/${prof.id}`}
+                                    className="group block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-[1px] hover:border-violet-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-violet-300"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <strong className="truncate text-slate-900">{prof.name}</strong>
+                                                <span
+                                                    className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-700">
+          {prof.role}
+        </span>
+                                            </div>
+
+                                            <p className="mt-1 truncate text-sm text-slate-600">
+                                                {shown.join(", ")}
+                                                {hasMore ? "…" : ""}
+                                            </p>
+                                        </div>
+
+                                        <span
+                                            className="shrink-0 text-sm font-medium text-violet-600 transition group-hover:translate-x-0.5">
+      Ver perfil →
+    </span>
+                                    </div>
+                                </Link>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </div>
+        </div>
+    )
 }

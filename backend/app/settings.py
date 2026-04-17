@@ -1,6 +1,8 @@
+from urllib.parse import quote_plus
+
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from urllib.parse import quote_plus
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
@@ -14,6 +16,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int
 
+    mailersend_api_token: str
+    mailersend_from_email: str
+    mailersend_from_name: str = "Oito"
+
     @computed_field
     @property
     def database_url(self) -> str:
@@ -23,5 +29,6 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{u}:{p}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
 
 settings = Settings()

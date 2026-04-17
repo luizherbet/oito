@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getStoredToken } from '../../api/auth.ts'
-import Service from '../../components/Service.tsx'
+import NewService from '../../components/NewService.tsx'
 import {
   SERVICE_DURATION_CHOICES,
   formatServiceDuration,
@@ -144,7 +144,7 @@ export default function Services() {
         </ul>
       </div>
       <div className="flex">
-        <Service onCreated={(novo) => setLista((prev) => [...prev, novo])} />
+        <NewService onCreated={(novo) => setLista((prev) => [...prev, novo])} />
       </div>
 
       {editando && (

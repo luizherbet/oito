@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import get_current_user, get_db
@@ -9,9 +9,43 @@ from app.models.appointment import Appointment
 from app.models.schedule import Schedule
 from app.models.service import Service
 from app.models.user import User
-from app.schemas.appointment import AppointmentCreate, AppointmentRead
+from app.schemas.appointment import (
+    AppointmentCreate,
+    AppointmentRead,
+    AppointmentReschedule,
+)
+from app.services.email import (
+    send_appointment_cancelled_email,
+    send_appointment_confirmed_email,
+    send_appointment_created_email,
+    send_appointment_rescheduled_email,
+)
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
+
+def _queue_appointment_emails(background_tasks: BackgroundTasks, appointment: Appointment, email_sender) -> None:
+    appointment_date = str(appointment.appointment_date)
+    appointment_time = str(appointment.appointment_time)
+
+    background_tasks.add_task(
+        email_sender,
+        appointment.client.email,
+        appointment.client.name,
+        appointment.professional.name,
+        appointment.service.title,
+        appointment_date,
+        appointment_time,
+    )
+
+    background_tasks.add_task(
+        email_sender,
+        appointment.professional.email,
+        appointment.professional.name,
+        appointment.client.name,
+        appointment.service.title,
+        appointment_date,
+        appointment_time,
+    )
 
 
 def _day_of_week_sunday_zero(d: date) -> int:
@@ -30,64 +64,33 @@ def _time_in_any_schedule_window(
     return False
 
 
-def _to_read(a: Appointment) -> AppointmentRead:
-    return AppointmentRead(
-        id=a.id,
-        client_id=a.client_id,
-        professional_id=a.professional_id,
-        service_id=a.service_id,
-        appointment_date=a.appointment_date,
-        appointment_time=a.appointment_time,
-        status=a.status,
-        notes=a.notes,
-        created_at=a.created_at,
-        updated_at=a.updated_at,
-        client_name=a.client.name,
-        professional_name=a.professional.name,
-        service_title=a.service.title,
-    )
-
-
-def _load_appointment_graph(db: Session, appt_id: int) -> Appointment:
-    row = (
-        db.query(Appointment)
-        .options(
-            joinedload(Appointment.client),
-            joinedload(Appointment.professional),
-            joinedload(Appointment.service),
-        )
-        .filter(Appointment.id == appt_id)
-        .one_or_none()
-    )
-    if row is None:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-    return row
-
-
+#AGENDAMENTOS FEITOS COMO CLIENTE
 @router.get("/me", response_model=list[AppointmentRead])
 def list_my_appointments_as_client(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[AppointmentRead]:
+
     if not current_user.is_active:
-        raise HTTPException(status_code=401, detail="Inactive user")
-    rows = (
+        raise HTTPException(status_code=403, detail="Inactive user")
+
+    appointments = (
         db.query(Appointment)
-        .options(
-            joinedload(Appointment.client),
-            joinedload(Appointment.professional),
-            joinedload(Appointment.service),
-        )
-        .filter(Appointment.client_id == current_user.id)
-        .order_by(
-            Appointment.appointment_date.desc(),
-            Appointment.appointment_time.desc(),
-        )
-        .all()
+            .options(
+                joinedload(Appointment.client),
+                joinedload(Appointment.professional),
+                joinedload(Appointment.service),
+            )
+            .filter(Appointment.client_id == current_user.id)
+            .order_by(
+                Appointment.appointment_date.desc(),
+                Appointment.appointment_time.desc(),
+            )
+            .all()
     )
-    return [_to_read(a) for a in rows]
+    return appointments
 
-
+#AGENDAMENTOS RECEBIDOS COMO PROFISSIONAL
 @router.get("/incoming", response_model=list[AppointmentRead])
 def list_incoming_appointments_as_professional(
     current_user: User = Depends(get_current_user),
@@ -100,7 +103,7 @@ def list_incoming_appointments_as_professional(
             status_code=403,
             detail="Only professionals can view incoming appointments",
         )
-    rows = (
+    appoiments = (
         db.query(Appointment)
         .options(
             joinedload(Appointment.client),
@@ -114,7 +117,7 @@ def list_incoming_appointments_as_professional(
         )
         .all()
     )
-    return [_to_read(a) for a in rows]
+    return appoiments
 
 
 @router.get("/{appointment_id}", response_model=AppointmentRead)
@@ -125,15 +128,16 @@ def get_appointment(
 ) -> AppointmentRead:
     if not current_user.is_active:
         raise HTTPException(status_code=401, detail="Inactive user")
-    a = _load_appointment_graph(db, appointment_id)
-    if a.client_id != current_user.id and a.professional_id != current_user.id:
+    appointment = db.query(Appointment).get(appointment_id)
+    if appointment.client_id != current_user.id and appointment.professional_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not allowed to view this appointment")
-    return _to_read(a)
+    return appointment
 
 
 @router.post("/", response_model=AppointmentRead, status_code=status.HTTP_201_CREATED)
 def create_appointment(
     payload: AppointmentCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> AppointmentRead:
@@ -206,39 +210,117 @@ def create_appointment(
     )
     db.add(appointment)
     db.commit()
+    db.refresh(appointment)
 
-    loaded = _load_appointment_graph(db, appointment.id)
-    return _to_read(loaded)
+    _queue_appointment_emails(background_tasks, appointment, send_appointment_created_email)
+
+    return appointment
 
 @router.patch("/{appointment_id}/confirm", response_model=AppointmentRead)
-def confirm_appointment(appointment_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db))-> AppointmentRead:
+def confirm_appointment(
+    appointment_id: int,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AppointmentRead:
     if not current_user.is_active or not current_user.is_professional:
-        raise HTTPException(status_code=401, detail="Inactive user")
+        raise HTTPException(status_code=403, detail="User not allowed")
 
-    appointment = _load_appointment_graph(db, appointment_id)
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
     if appointment.professional_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to view this appointment")
+        raise HTTPException(status_code=403, detail="Not allowed to modify this appointment")
+
     if appointment.status != AppointmentStatus.pending:
-        raise HTTPException(status_code=409, detail="Only pending appointments can be confirmed")
+        raise HTTPException(
+            status_code=409,
+            detail="Only pending appointments can be confirmed"
+        )
+
     appointment.status = AppointmentStatus.confirmed
     db.commit()
-    loaded = _load_appointment_graph(db, appointment.id)
-    return _to_read(loaded)
+    db.refresh(appointment)
 
-@router.patch("/{appointment_id}/delete", response_model=AppointmentRead)
-def delete_appointment(appointment_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db))-> AppointmentRead:
+    _queue_appointment_emails(background_tasks, appointment, send_appointment_confirmed_email)
+
+    return appointment
+
+
+@router.patch("/{appointment_id}/cancel", response_model=AppointmentRead)
+def cancel_appointment(
+    appointment_id: int,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AppointmentRead:
     if not current_user.is_active or not current_user.is_professional:
-        raise HTTPException(status_code=401, detail="Inactive user")
-    appointment = _load_appointment_graph(db, appointment_id)
+        raise HTTPException(status_code=403, detail="User not allowed")
+
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
     if appointment.professional_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not allowed to view this appointment")
+        raise HTTPException(status_code=403, detail="Not allowed to modify this appointment")
+
     if appointment.status != AppointmentStatus.pending:
-        raise HTTPException(status_code=409, detail="Only pending appointments can be confirmed")
+        raise HTTPException(
+            status_code=409,
+            detail="Only pending appointments can be cancelled"
+        )
+
     appointment.status = AppointmentStatus.cancelled
     db.commit()
-    loaded = _load_appointment_graph(db, appointment.id)
-    return _to_read(loaded)
+    db.refresh(appointment)
 
+    _queue_appointment_emails(background_tasks, appointment, send_appointment_cancelled_email)
+
+    return appointment
+
+@router.patch("/{appointment_id}/reschedule", response_model=AppointmentRead)
+def reschedule_appointment(
+    appointment_id: int,
+    payload: AppointmentReschedule,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AppointmentRead:
+    if not current_user.is_active or not current_user.is_professional:
+        raise HTTPException(status_code=403, detail="User not allowed")
+
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if appointment.professional_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not allowed to modify this appointment")
+
+    if appointment.status != AppointmentStatus.pending:
+        raise HTTPException(
+            status_code=409,
+            detail="Only pending appointments can be rescheduled"
+        )
+
+    appointment.appointment_date = payload.appointment_date
+    appointment.appointment_time = payload.appointment_time
+    appointment.notes = payload.notes
+    appointment.status = AppointmentStatus.rescheduled
+
+    db.commit()
+    db.refresh(appointment)
+
+    _queue_appointment_emails(
+        background_tasks,
+        appointment,
+        send_appointment_rescheduled_email,
+    )
+
+    return appointment
 #deve ser profissional ok
 #id do prof do agendamento == current user
 #se o status atual for pendente

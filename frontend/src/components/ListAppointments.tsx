@@ -32,8 +32,8 @@ export function ListAppointments() {
         return res.json() as Promise<AppointmentRead>;
     }
 
-        async function deleteAppointment(appointmentId: number): Promise<AppointmentRead> {
-        const res = await fetch(`/api/v1/appointments/${appointmentId}/delete`, {
+    async function cancelAppointment(appointmentId: number): Promise<AppointmentRead> {
+        const res = await fetch(`/api/v1/appointments/${appointmentId}/cancel`, {
             method: "PATCH",
             headers: {
                 'Content-Type': 'application/json',
@@ -83,7 +83,8 @@ export function ListAppointments() {
 
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-2 text-lg font-semibold text-slate-900">Meus agendamentos</h2>
+            <h2 className=" border-b border-slate-100  p-2 text-lg font-semibold text-slate-900 text-center">Meus
+                agendamentos</h2>
             {loading ? (
                 <p className="mb-4 text-sm text-slate-600">Carregando...</p>
             ) : error ? (
@@ -97,8 +98,8 @@ export function ListAppointments() {
                         {incoming!.map((a) => (
                             <CardAppointment
                                 key={a.id}
-                                service={a.service_title}
-                                nome={a.client_name}
+                                service={a.service.title}
+                                nome={a.client.name}
                                 data={a.appointment_date}
                                 time={a.appointment_time}
                                 status={a.status}
@@ -109,10 +110,10 @@ export function ListAppointments() {
                                     setIncoming(updated);
                                 }}
                                 onCancel={async () => {
-                                        await deleteAppointment(a.id);
-                                        const updated = await fetchIncomingAppointments();
-                                        setIncoming(updated);
-                                    }}
+                                    await cancelAppointment(a.id);
+                                    const updated = await fetchIncomingAppointments();
+                                    setIncoming(updated);
+                                }}
                             />
                         ))}
                     </ul>
@@ -128,20 +129,23 @@ export function ListAppointments() {
                             ? mine.map((a) => (
                                 <CardAppointment
                                     key={a.id}
-                                    service={a.service_title}
-                                    nome={a.professional_name}
+                                    service={a.service.title}
+                                    nome={a.professional.name}
                                     data={a.appointment_date}
                                     time={a.appointment_time}
-                                    status={a.status}
-                                        />
-                                        ))
-                                        : !loading && !error
-                                        ? "Nenhum agendamento!"
-                                        : null}
-                            </ul>
-                            </>
-                            )}
+                                    isProfessional={false}
 
-                    </div>
-                    )
-                    }
+                                    status={a.status}
+                                />
+                            ))
+                            : !loading && !error
+                                ? "Nenhum agendamento!"
+                                : null}
+
+                    </ul>
+                </>
+            )}
+
+        </div>
+    )
+}

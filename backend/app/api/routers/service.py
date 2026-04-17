@@ -94,7 +94,7 @@ def read_service(id: int, current_user: User = Depends(get_current_user), db: Se
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service not found",
+            detail="NewService not found",
         )
     return service
 
@@ -116,7 +116,7 @@ def update_service(id: int, payload: ServiceCreate, current_user: User = Depends
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service not found",
+            detail="NewService not found",
         )
     if service.professional_id != current_user.id:
         raise HTTPException(
@@ -138,7 +138,7 @@ def update_service(id: int, payload: ServiceCreate, current_user: User = Depends
 # deve ser user profissional
 # verificar se o serviço existe
 # se existir pertence ao current user?
-# quais dados poder ser atualizados, tem que criar schema para update Service
+# quais dados poder ser atualizados, tem que criar schema para update NewService
 
 @router.delete("/{id}", response_model=ServiceRead)
 # deletamos ou apenas tornamos inativo?
@@ -161,7 +161,7 @@ def delete_service(id: int, current_user: User = Depends(get_current_user),
     if not service:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Service not found",
+            detail="NewService not found",
         )
     if service.professional_id != current_user.id:
         raise HTTPException(
