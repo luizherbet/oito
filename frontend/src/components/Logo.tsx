@@ -1,16 +1,17 @@
-export default function Logo() {
-    return (<div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-        <a href={"/"}>
-            <video
-                src="/logo.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                style={{height: 40, width: 'auto', borderRadius: 8, background: 'white'}}
-            />
-        </a>
+import { Link } from "react-router-dom"
 
-    </div>)
+export default function Logo() {
+  return (
+    <Link to="/" className="flex items-center gap-2">
+      <video
+        src="/logo.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        className="h-9 w-auto rounded-md bg-white sm:h-10"
+      />
+    </Link>
+  )
 }

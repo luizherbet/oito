@@ -372,7 +372,8 @@ export default function CreateAppointment({ onCreated }: Props) {
             <label className="flex flex-col gap-1 text-sm">
               Hora
               <input
-                type="time"
+                type="select"
+                step={1800}
                 required
                 className="rounded border border-slate-300 px-3 py-2"
                 value={appointmentTime}
