@@ -279,21 +279,5 @@ A aplicacao envia notificacoes automaticas por e-mail nos seguintes eventos:
 - cancelamento de agendamento
 - reagendamento de agendamento
 
-A integracao e feita com MailerSend.
+A integracao feita com MailerSend.
 
-## Observacoes
-
-- o `README.md` original do projeto estava vazio
-- o `frontend/README.md` ainda esta no formato padrao do template Vite
-- nao foi encontrado arquivo `.env.example`
-- nao foi encontrado `docker-compose.yml`
-- nao foi encontrada documentacao de deploy
-- nao foi encontrada suite de testes configurada no repositorio
-
-## Proximos Passos Sugeridos
-
-- adicionar um `.env.example`
-- documentar o processo de criacao do banco
-- documentar deploy
-- adicionar testes automatizados para backend e frontend
-- substituir o README padrao do frontend por documentacao do produto
